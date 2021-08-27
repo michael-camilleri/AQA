@@ -20,6 +20,9 @@ from tao.utils.parallel.fixed_gpu_pool import FixedGpuPool
 import time
 from numpy import pad
 from reid_pytorch.reid_extractor import ReID_Inference
+
+from mpctools.parallel import ProgressBar
+
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -103,17 +106,19 @@ def infer(kwargs, context):
     det_df = det_df[conds]
 
     bbox_dataset = BoundingBoxDataset(det_df)
-    bbox_loader = DataLoader(bbox_dataset, batch_size=500, pin_memory=False, num_workers=4)
+    bbox_loader = DataLoader(bbox_dataset, batch_size=50, pin_memory=False, num_workers=4)
     #Feed all bboxes to the CNN to obtain node and reid embeddings
     
     print(f"Computing embeddings for {len(bbox_dataset)} detections")
     #start_time = time.time()
     features = []
     with torch.no_grad():
+        progress = ProgressBar(len(bbox_loader)).reset('Embedding')
         for bboxes in bbox_loader:
             bboxes = bboxes.numpy()
             feature = model(bboxes)
             features.append(feature)
+            progress.update()
             #print(time.time() - start_time, image_path)
     
     features = np.concatenate(features, axis=0)
@@ -157,7 +162,21 @@ def main():
                         default='reid_pytorch/reid1.onnx',
                         help='name of the reid model file')
     parser.add_argument('--gpus', default=[0], nargs='+', type=int)
-    args = parser.parse_args()
+
+    if 'RUN_MODE_IDE' in os.environ:
+        args = parser.parse_args([
+            "--detections-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/data/",
+            "--annotations", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/annotations.json",
+            "--output-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/tracks",
+            "--image-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/frames/",
+            "--detection-file", "det.txt",
+            "--model-file", "/home/s1238640/Documents/Code/AQA/tao_tracking_release/reid_pytorch/reid1.onnx",
+            "--gpus", "0",
+        ])
+        print(f'Running from PyCharm')
+    else:
+        args = parser.parse_args()
+        print(f'Running from Terminal')
     
     args.output_dir.mkdir(exist_ok=True, parents=True)
     

@@ -117,7 +117,20 @@ def main():
     parser.add_argument('--det-num', type=int, default=300, help='number of detections to save')
     parser.add_argument('--workers', default=8, type=int)
 
-    args = parser.parse_args()
+    if 'RUN_MODE_IDE' in os.environ:
+        args = parser.parse_args([
+            "--detections-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/detections/",
+            "--annotations", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/annotations.json",
+            "--output-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/data",
+            "--output-file", "det.txt",
+            "--nms-thresh", "0.5",
+            "--det-num", "300",
+            "--workers", "0",
+        ])
+        print(f'Running from PyCharm')
+    else:
+        args = parser.parse_args()
+        print(f'Running from Terminal')
     
     args.score_threshold = (-float('inf') if args.score_threshold == 'none'
                             else float(args.score_threshold))
