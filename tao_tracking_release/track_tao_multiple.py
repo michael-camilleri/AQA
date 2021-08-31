@@ -57,6 +57,9 @@ def track_and_save_star(args):
     track_and_save(*args)
 
 
+def get_output_path(output_dir, video):
+    return output_dir / (video + '.npy')
+
 def main():
     # Use first line of file docstring as description if it exists.
     parser = argparse.ArgumentParser(
@@ -98,73 +101,80 @@ def main():
             "--output-dir", "/media/veracrypt4/Scratch/AQA/tracks/",
             "--save-feature",
             "--workers", "8",
+            "--max_age", "1",
+            "--n_init", "1",
         ])
         print(f'Running from PyCharm')
     else:
         args = parser.parse_args()
         print(f'Running from Terminal')
 
-    args.nms_max_overlap = (-float('inf') if args.nms_max_overlap == 'none'
-                            else float(args.nms_max_overlap))
+    for max_nms in [0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+        for max_cos in [0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
 
-    args.output_dir.mkdir(exist_ok=True, parents=True)
+            args.nms_max_overlap = float(max_nms)
+            args.max_cosine_distance = float(max_cos)
+            experiment = f'{max_nms:.02f}_{max_cos:.02f}'
 
-    def get_output_path(video):
-        return args.output_dir / (video + '.npy')
+            print('Doing Experiment: ' + experiment)
 
-    with open(args.annotations, 'r') as f:
-        groundtruth = json.load(f)
-    videos = [x['name'] for x in groundtruth['videos']]
-    video_paths = {}
-    for video in tqdm(videos, desc='Collecting paths'):
-        output = get_output_path(video)
-        if output.exists():
-            print(f'{output} already exists, skipping...')
-            continue
-        detection_paths = args.detections_dir / video / 'det.npy'
-        
-        assert detection_paths.exists()
-        video_paths[video] = detection_paths
+            output_dir = args.output_dir / experiment
+            output_dir.mkdir(exist_ok=True, parents=True)
 
-    if not video_paths:
-        print(f'Nothing to do! Exiting.')
-        return
-    print(f'Found {len(video_paths)} videos to track.')
+            with open(args.annotations, 'r') as f:
+                groundtruth = json.load(f)
+            videos = [x['name'] for x in groundtruth['videos']]
+            video_paths = {}
+            for video in tqdm(videos, desc='Collecting paths'):
+                output = get_output_path(output_dir, video)
+                if output.exists():
+                    print(f'{output} already exists, skipping...')
+                    continue
+                detection_paths = args.detections_dir / video / 'det.npy'
 
-    tasks = []
-    for video, path in tqdm(video_paths.items()):
-        output = get_output_path(video)
-        tasks.append((path, output, args.save_feature, {
-                          'min_confidence': args.min_confidence,
-                          'nms_max_overlap': args.nms_max_overlap,
-                          'max_cosine_distance': args.max_cosine_distance,
-                          'nn_budget': args.nn_budget,
-                          'max_age': args.max_age,
-                          'n_init': args.n_init,
-                      }))
+                assert detection_paths.exists()
+                video_paths[video] = detection_paths
 
-    if args.workers > 0:
-        pool = Pool(args.workers)
-        list(
-            tqdm(pool.imap_unordered(track_and_save_star, tasks),
-                 total=len(tasks),
-                 desc='Tracking'))
-    else:
-        for task in tqdm(tasks):
-            track_and_save(*task)
-    print(f'Finished')
-    
-    if 'train' in str(args.annotations):
-        output = args.output_dir / 'train_results.json'
-    elif 'val' in str(args.annotations):
-        output = args.output_dir / 'val_results.json'
-    elif 'test'in str(args.annotations):
-        output = args.output_dir / 'test_results.json'
-    else:
-        print('wrong annotations')
+            if not video_paths:
+                print(f'Nothing to do! Exiting.')
+            else:
+                print(f'Found {len(video_paths)} videos to track.')
 
-    create_json(args.output_dir, groundtruth, output)
+                tasks = []
+                for video, path in tqdm(video_paths.items()):
+                    output = get_output_path(output_dir, video)
+                    tasks.append((path, output, args.save_feature, {
+                                      'min_confidence': args.min_confidence,
+                                      'nms_max_overlap': args.nms_max_overlap,
+                                      'max_cosine_distance': args.max_cosine_distance,
+                                      'nn_budget': args.nn_budget,
+                                      'max_age': args.max_age,
+                                      'n_init': args.n_init,
+                                  }))
 
+                if args.workers > 0:
+                    pool = Pool(args.workers)
+                    list(
+                        tqdm(pool.imap_unordered(track_and_save_star, tasks),
+                             total=len(tasks),
+                             desc='Tracking'))
+                else:
+                    for task in tqdm(tasks):
+                        track_and_save(*task)
+                print(f'Finished')
+
+                if 'train' in str(args.annotations):
+                    output = output_dir / 'train_results.json'
+                elif 'val' in str(args.annotations):
+                    output = output_dir / 'val_results.json'
+                elif 'test'in str(args.annotations):
+                    output = output_dir / 'test_results.json'
+                else:
+                    print('wrong annotations')
+
+                create_json(output_dir, groundtruth, output)
+
+            print('------------------------------------------')
 
 if __name__ == "__main__":
     main()

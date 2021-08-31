@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import torch
 from tqdm import tqdm
+import os
 
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -64,7 +65,18 @@ def main():
     
     parser.add_argument('--workers', default=8, type=int)
 
-    args = parser.parse_args()
+    if 'RUN_MODE_IDE' in os.environ:
+        args = parser.parse_args([
+            "--onnx_results1", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/tracks",
+            "--onnx_results2", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/tracks",
+            "--annotations", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/train.json",
+            "--output-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/results",
+            "--workers", "8",
+        ])
+        print(f'Running from PyCharm')
+    else:
+        args = parser.parse_args()
+        print(f'Running from Terminal')
 
     args.output_dir.mkdir(exist_ok=True, parents=True)
 

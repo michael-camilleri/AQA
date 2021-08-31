@@ -119,13 +119,13 @@ def main():
 
     if 'RUN_MODE_IDE' in os.environ:
         args = parser.parse_args([
-            "--detections-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/detections/",
-            "--annotations", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/annotations.json",
-            "--output-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/data",
+            "--detections-dir", "/media/veracrypt4/Scratch/AQA/detections/",
+            "--annotations", "/media/veracrypt4/Scratch/AQA/train.json",
+            "--output-dir", "/media/veracrypt4/Scratch/AQA/aqa_detect",
             "--output-file", "det.txt",
             "--nms-thresh", "0.5",
-            "--det-num", "300",
-            "--workers", "0",
+            "--det-num", "300000",
+            "--workers", "8",
         ])
         print(f'Running from PyCharm')
     else:

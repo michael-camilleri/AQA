@@ -165,10 +165,10 @@ def main():
 
     if 'RUN_MODE_IDE' in os.environ:
         args = parser.parse_args([
-            "--detections-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/data/",
-            "--annotations", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/annotations.json",
-            "--output-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/tracks",
-            "--image-dir", "/home/s1238640/Documents/DataSynced/PhD Project/Data/MRC Harwell/Scratch/TAO_Test/frames/",
+            "--detections-dir", "/media/veracrypt4/Scratch/AQA/aqa_detect/",
+            "--annotations", "/media/veracrypt4/Scratch/AQA/train.json",
+            "--output-dir", "/media/veracrypt4/Scratch/AQA/embeddings",
+            "--image-dir", "/media/veracrypt4/Scratch/AQA/frames/",
             "--detection-file", "det.txt",
             "--model-file", "/home/s1238640/Documents/Code/AQA/tao_tracking_release/reid_pytorch/reid1.onnx",
             "--gpus", "0",
